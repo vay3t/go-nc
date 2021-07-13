@@ -1,2 +1,2 @@
 # go-nc
-Simple Netcat for revshells in Go
+Simple Command & Control for revshells in Go
