@@ -1,4 +1,5 @@
 // https://github.com/LukeDSchenk/go-backdoors/blob/master/revshell.go
+// https://github.com/dddpaul/gonc/blob/master/tcp/tcp.go
 
 package main
 
