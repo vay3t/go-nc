@@ -1,5 +1,15 @@
 # go-nc
-Simple Command & Control for revshells in pure Go
+Simple Command & Control for revshells in pure Go (Like a Netcat)
+
+# Why?
+The project is based on two repositories, which I unify and modify according to the use that is given to hacking. The idea of this project is to quickly and easily compile a multipurpose binary for different platforms and architectures. The advantage of this project is that it is easily obfuscable to evade antivirus, example: https://twitter.com/vay3t/status/1415547032719273984
+
+Note: I asked the gonc project owner to include the -exec functionality to his project. As I am a bit impatient, I ended up doing it my way and it managed to remain functional.
+
+Project based on:
+* https://github.com/LukeDSchenk/go-backdoors
+* https://github.com/dddpaul/gonc/
+
 
 # Build
 
