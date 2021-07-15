@@ -2,10 +2,21 @@
 Simple Command & Control for revshells in pure Go
 
 # Build
+
+### For Linux
 ```bash
 git clone https://github.com/vay3t/go-nc
 cd go-nc
-go build .
+go build -ldflags "-s -w" go-nc.go
+upx go-nc
+```
+
+### For Windows
+```bash
+git clone https://github.com/vay3t/go-nc
+cd go-nc
+GOOS=windows GOARCH=amd64 go build -ldflags "-s -w" go-nc.go
+upx go-nc.exe
 ```
 
 # Usage
