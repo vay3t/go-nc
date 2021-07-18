@@ -1,5 +1,8 @@
 # go-nc
-Simple Command & Control for revshells in pure Go (Like a Netcat)
+Simple Command & Control for revshells in pure Go (Like a Netcat).
+
+# Archived
+Migrated to https://gitlab.com/vay3t/go-nc
 
 # Why?
 The project is based on two repositories, which I unify and modify according to the use that is given to hacking. The idea of this project is to quickly and easily compile a multipurpose binary for different platforms and architectures. The advantage of this project is that it is easily obfuscable to evade antivirus, example: https://twitter.com/vay3t/status/1415547032719273984
